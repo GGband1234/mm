@@ -1,0 +1,4 @@
+org.springframework.boot.autoconfigure.EnableAutoConfiguration=\
+org.example.config.MybatisPlusConfig,\
+org.example.config.WebMvcConfig,\
+org.example.config.Knife4jConfig

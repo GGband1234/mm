@@ -1,0 +1,42 @@
+server:
+  port: 8080
+spring:
+  application:
+    name: mm-gateway
+  cloud:
+    nacos:
+      server-addr: 192.168.184.129:8848
+    gateway:
+      routes:
+        - id: user # 路由规则id，自定义，唯一
+          uri: lb://mm-user # 路由的目标服务，lb代表负载均衡，会从注册中心拉取服务列表
+          predicates: # 路由断言，判断当前请求是否符合当前规则，符合则路由到目标服务
+            - Path=/user/** # 这里是以请求路径作为判断规则
+        - id: budget
+          uri: lb://mm-budget
+          predicates:
+            - Path=/budget/**
+        - id: purchase
+          uri: lb://mm-purchases
+          predicates:
+            - Path=/purchases/**,/suppliers/**
+        - id: inventory
+          uri: lb://mm-inventory
+          predicates:
+            - Path=/inventorys/**,/warehouses/**,/outbound/**,/providedMaterial/**
+#        - id: pay
+#          uri: lb://pay-service
+#          predicates:
+#            - Path=/pay-orders/**
+mm:
+  auth:
+    exclude-paths:
+      - /user/login
+      - /user/register
+      - /doc.html/**
+      - /swagger-resoures/**
+      - /swagger-ui.html/**
+      - /swagger**/**
+      - /webjars/**
+      - /v3/**
+      - /static/**

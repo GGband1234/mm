@@ -1,0 +1,5 @@
+mm:
+  db:
+    host: localhost
+    pw: 123
+    database: mm-user
