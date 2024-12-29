@@ -24,10 +24,10 @@ spring:
           uri: lb://mm-inventory
           predicates:
             - Path=/inventorys/**,/warehouses/**,/outbound/**,/providedMaterial/**
-#        - id: pay
-#          uri: lb://pay-service
-#          predicates:
-#            - Path=/pay-orders/**
+        - id: processing
+          uri: lb://mm-processing
+          predicates:
+            - Path=/processing/**
 mm:
   auth:
     exclude-paths:
