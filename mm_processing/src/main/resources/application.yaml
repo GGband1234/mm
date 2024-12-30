@@ -1,6 +1,15 @@
 server:
   port: 8083
 spring:
+  rabbitmq:
+    listener:
+      simple:
+        prefetch: 1
+    host: 192.168.184.129 # 你的虚拟机IP
+    port: 5672 # 端口
+    virtual-host: /hmm # 虚拟主机
+    username: hmm # 用户名
+    password: 123456 # 密码
   application:
     name: mm-processing
   cloud:

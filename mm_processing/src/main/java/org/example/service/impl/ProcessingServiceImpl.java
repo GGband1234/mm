@@ -16,6 +16,11 @@ import org.example.mapper.ProcessingMapper;
 import org.example.result.PageResult;
 import org.example.result.Result;
 import org.example.service.ProcessingService;
+import org.example.utils.ThreadLocalUtil;
+import org.springframework.amqp.AmqpException;
+import org.springframework.amqp.core.Message;
+import org.springframework.amqp.core.MessagePostProcessor;
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -24,7 +29,9 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigInteger;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.regex.Pattern;
 
 @Service
@@ -34,6 +41,8 @@ public class ProcessingServiceImpl extends ServiceImpl<ProcessingMapper, Process
     InventoryClient inventoryClient;
     @Autowired
     BudgetClient budgetClient;
+    @Autowired
+    RabbitTemplate rabbitTemplate;
 
     @Override
     @GlobalTransactional
@@ -65,24 +74,35 @@ public class ProcessingServiceImpl extends ServiceImpl<ProcessingMapper, Process
                 throw new RuntimeException("项目所在仓库中没有该材料");
             inventorys.add(inventorysOne);
         }
-
-        for (int i1 = 0; i1 < inventorys.size(); i1++) {
-            BigInteger bigInteger = new BigInteger(materialRatioSplit[i1]);
-            BigInteger reduceNum  = bigInteger.multiply(processingDto.getQuantity());
-            if (inventorys.get(i1).getQuantity().compareTo(reduceNum) < 0)
-                throw new RuntimeException(inventorys.get(i1).getMaterialName()+"库存不足");
-//            TODO 异步调用
-            inventoryClient.reduceInventory(inventorys.get(i1).getInventoryId(), reduceNum);
-        }
-
         Processing processing = new Processing();
         BeanUtils.copyProperties(processingDto,processing);
         processing.setProjectId(projects.getProjectId());
         processing.setWarehouseId(warehouses.getWarehouseId());
         processing.setCreateTime(LocalDateTime.now());
         processing.setUpdateTime(LocalDateTime.now());
-
         save(processing);
+
+        for (int i1 = 0; i1 < inventorys.size(); i1++) {
+            BigInteger bigInteger = new BigInteger(materialRatioSplit[i1]);
+            BigInteger reduceNum  = bigInteger.multiply(processingDto.getQuantity());
+            if (inventorys.get(i1).getQuantity().compareTo(reduceNum) < 0)
+                throw new RuntimeException(inventorys.get(i1).getMaterialName()+"库存不足");
+            Map<String,Object> map = new HashMap<>();
+            map.put("inventoryId",inventorys.get(i1).getInventoryId());
+            map.put("inventoryQuantiry",reduceNum);
+//            TODO 异步调用
+            rabbitTemplate.convertAndSend("inventory.direct", "inventory.reduce.quantity", map, new MessagePostProcessor() {
+                @Override
+                public Message postProcessMessage(Message message) throws AmqpException {
+                    String username = ThreadLocalUtil.get();
+                    message.getMessageProperties().setHeader("user-info",username);
+                    return message;
+                }
+            });
+//            inventoryClient.reduceInventory(inventorys.get(i1).getInventoryId(), reduceNum);
+        }
+
+
 
     }
 

@@ -17,6 +17,8 @@
     </properties>
     <dependencies>
 
+
+
         <!--读取bootstrap文件-->
         <dependency>
             <groupId>org.springframework.cloud</groupId>
