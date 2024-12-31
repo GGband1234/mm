@@ -17,6 +17,11 @@
     </properties>
 
     <dependencies>
+        <!-- Spring Boot Mail Starter -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-mail</artifactId>
+        </dependency>
 
         <!--        消息转换-->
         <dependency>

@@ -152,6 +152,7 @@ public class InventorysServiceImpl extends ServiceImpl<InventorysMapper, Invento
             inventorys.setWarehouseId(warehouse.getWarehouseId());
             updateById(inventorys);
         }
+        rabbitTemplate.convertAndSend("inventory.direct","inventory.monitor.change",inventorysDto.getInventoryId());
     }
     @Transactional
     @Override
@@ -172,6 +173,7 @@ public class InventorysServiceImpl extends ServiceImpl<InventorysMapper, Invento
         outbound.setOutboundDate(LocalDateTime.now());
         outbound.setCreatedBy(byUserName.getUserId());
         outboundService.save(outbound);
+        rabbitTemplate.convertAndSend("inventory.direct","inventory.monitor.change",inventoryId);
     }
 
 
