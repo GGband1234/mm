@@ -90,7 +90,6 @@ public class ProcessingServiceImpl extends ServiceImpl<ProcessingMapper, Process
             Map<String,Object> map = new HashMap<>();
             map.put("inventoryId",inventorys.get(i1).getInventoryId());
             map.put("inventoryQuantiry",reduceNum);
-//            TODO 异步调用
             rabbitTemplate.convertAndSend("inventory.direct", "inventory.reduce.quantity", map, new MessagePostProcessor() {
                 @Override
                 public Message postProcessMessage(Message message) throws AmqpException {

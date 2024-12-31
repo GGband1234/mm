@@ -15,6 +15,10 @@ import org.example.mapper.InventorysMapper;
 import org.example.result.PageResult;
 import org.example.service.*;
 import org.example.utils.ThreadLocalUtil;
+import org.springframework.amqp.AmqpException;
+import org.springframework.amqp.core.Message;
+import org.springframework.amqp.core.MessagePostProcessor;
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.StringRedisTemplate;
@@ -34,6 +38,8 @@ import java.util.Objects;
 public class InventorysServiceImpl extends ServiceImpl<InventorysMapper, Inventorys> implements InventorysService {
 
     @Autowired
+    RabbitTemplate rabbitTemplate;
+    @Autowired
     PurchasesClient purchasesClient;
     @Autowired
     ProvidedMaterialService providedMaterialService;
@@ -51,17 +57,25 @@ public class InventorysServiceImpl extends ServiceImpl<InventorysMapper, Invento
         Purchases purchases1 = new Purchases();
         purchases1.setStatus(1);
         purchases1.setDeleted(0);
+        List<Integer> purchasesIds = new ArrayList<>();
         List<Purchases> purchasesList = purchasesClient.listPurchaseCondition(purchases1);
         for (Purchases purchases : purchasesList) {
             Inventorys inventorys = new Inventorys();
             BeanUtils.copyProperties(purchases,inventorys);
-//            TODO 可使用mq异步调用
-            purchasesClient.updatePurchaseCondition(1,purchases.getPurchaseId());
+            purchasesIds.add(purchases.getPurchaseId());
+//            purchasesClient.updatePurchaseCondition(1,purchases.getPurchaseId());
             inventorys.setCreateTime(LocalDateTime.now());
             inventorys.setUpdateTime(LocalDateTime.now());
             inventorysList.add(inventorys);
         }
         saveBatch(inventorysList);
+        rabbitTemplate.convertAndSend("inventory.direct", "purchease.logic.del", purchasesIds, new MessagePostProcessor() {
+            @Override
+            public Message postProcessMessage(Message message) throws AmqpException {
+                message.getMessageProperties().setHeader("user-info",ThreadLocalUtil.get());
+                return message;
+            }
+        });
     }
 
     @Override
