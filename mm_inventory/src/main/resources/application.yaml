@@ -36,8 +36,8 @@ spring:
   mail:
     host: smtp.qq.com
     port: 465   # 使用SSL连接的端口
-    username: 2404566466@qq.com  # 确保使用完整的邮箱地址
-    password: nxfimunntotjdhje # 授权码
+    username: *****@qq.com  # 确保使用完整的邮箱地址
+    password: ****** # 授权码
     default-encoding: utf-8
     properties:
       mail:
